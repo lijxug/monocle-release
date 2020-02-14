@@ -637,12 +637,20 @@ reduceDimension <- function(cds,
                                          'set_op_mix_ratio', 'local_connectivity', 'repulsion_strength', 'a', 'b', 'random_state', 'metric_kwds', 'angular_rp_forest', 'verbose')])
       tmp <- do.call(UMAP, umap_args)
       tmp$embedding_ <- (tmp$embedding_ - min(tmp$embedding_)) / max(tmp$embedding_) # normalize UMAP space
-      umap_res <- tmp$embedding_; 
-      
-      adj_mat <- Matrix::sparseMatrix(i = tmp$graph_$indices, p = tmp$graph_$indptr, 
+      umap_res <- tmp$embedding_
+
+      if(class(tmp$graph_) == "dgRMatrix"){ 
+	X2 <- as(tmp$graph_, "CsparseMatrix")
+      	adj_mat <- Matrix::sparseMatrix(i = X2@i, p = X2@p, x = -as.numeric(X2@x), 
+      	  			      dims = c(ncol(cds), ncol(cds)), index1 = F, 
+      					      dimnames = list(colnames(cds), colnames(cds))) 
+	} else { 
+	adj_mat <- Matrix::sparseMatrix(i = tmp$graph_$indices, p = tmp$graph_$indptr, 
                                       x = -as.numeric(tmp$graph_$data), dims = c(ncol(cds), ncol(cds)), index1 = F, 
                                       dimnames = list(colnames(cds), colnames(cds)))
-      
+	}
+      	
+     
       S <- t(umap_res)
       
       Y <- S
